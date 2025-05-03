@@ -9,14 +9,26 @@ interface Particle {
   speedX: number;
   speedY: number;
   opacity: number;
+  rotation: number;
+  rotationSpeed: number;
+  shape: 'circle' | 'square' | 'triangle' | 'star';
 }
 
 interface FloatingParticlesProps {
   count?: number;
   colors?: string[];
+  speed?: number;
+  shapes?: boolean;
+  glow?: boolean;
 }
 
-const FloatingParticles = ({ count = 30, colors = ['#8B5CF6', '#A78BFA', '#EC4899', '#3B82F6'] }: FloatingParticlesProps) => {
+const FloatingParticles = ({ 
+  count = 30, 
+  colors = ['#8B5CF6', '#A78BFA', '#EC4899', '#3B82F6'], 
+  speed = 1,
+  shapes = false,
+  glow = false
+}: FloatingParticlesProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const particlesRef = useRef<Particle[]>([]);
@@ -45,15 +57,77 @@ const FloatingParticles = ({ count = 30, colors = ['#8B5CF6', '#A78BFA', '#EC489
   useEffect(() => {
     if (dimensions.width === 0 || dimensions.height === 0) return;
 
+    // Shape drawing functions
+    const drawShape = (ctx: CanvasRenderingContext2D, particle: Particle) => {
+      ctx.save();
+      ctx.translate(particle.x, particle.y);
+      ctx.rotate(particle.rotation);
+      
+      const fillStyle = glow 
+        ? particle.color + Math.floor(particle.opacity * 255).toString(16).padStart(2, '0')
+        : particle.color + Math.floor(particle.opacity * 255).toString(16).padStart(2, '0');
+      
+      ctx.fillStyle = fillStyle;
+      
+      if (glow) {
+        ctx.shadowColor = particle.color;
+        ctx.shadowBlur = particle.size * 2;
+      }
+      
+      switch (particle.shape) {
+        case 'square':
+          ctx.fillRect(-particle.size, -particle.size, particle.size * 2, particle.size * 2);
+          break;
+        case 'triangle':
+          ctx.beginPath();
+          ctx.moveTo(0, -particle.size);
+          ctx.lineTo(particle.size, particle.size);
+          ctx.lineTo(-particle.size, particle.size);
+          ctx.closePath();
+          ctx.fill();
+          break;
+        case 'star':
+          const spikes = 5;
+          const outerRadius = particle.size;
+          const innerRadius = particle.size / 2;
+          let rot = Math.PI / 2 * 3;
+          let step = Math.PI / spikes;
+          
+          ctx.beginPath();
+          for (let i = 0; i < spikes; i++) {
+            ctx.lineTo(Math.cos(rot) * outerRadius + 0, Math.sin(rot) * outerRadius + 0);
+            rot += step;
+            ctx.lineTo(Math.cos(rot) * innerRadius + 0, Math.sin(rot) * innerRadius + 0);
+            rot += step;
+          }
+          ctx.closePath();
+          ctx.fill();
+          break;
+        case 'circle':
+        default:
+          ctx.beginPath();
+          ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+      }
+      
+      ctx.restore();
+    };
+
     // Initialize particles
     particlesRef.current = Array.from({ length: count }, () => ({
       x: Math.random() * dimensions.width,
       y: Math.random() * dimensions.height,
       size: Math.random() * 3 + 1,
       color: colors[Math.floor(Math.random() * colors.length)],
-      speedX: (Math.random() - 0.5) * 0.7,
-      speedY: (Math.random() - 0.5) * 0.7,
-      opacity: Math.random() * 0.5 + 0.1
+      speedX: (Math.random() - 0.5) * 0.7 * speed,
+      speedY: (Math.random() - 0.5) * 0.7 * speed,
+      opacity: Math.random() * 0.5 + 0.1,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.02,
+      shape: shapes ? 
+        ['circle', 'square', 'triangle', 'star'][Math.floor(Math.random() * 4)] as Particle['shape'] :
+        'circle'
     }));
 
     const animate = () => {
@@ -66,6 +140,7 @@ const FloatingParticles = ({ count = 30, colors = ['#8B5CF6', '#A78BFA', '#EC489
         // Update position
         particle.x += particle.speedX;
         particle.y += particle.speedY;
+        particle.rotation += particle.rotationSpeed;
 
         // Bounce effect when hitting edges
         if (particle.x < 0 || particle.x > dimensions.width) {
@@ -75,11 +150,8 @@ const FloatingParticles = ({ count = 30, colors = ['#8B5CF6', '#A78BFA', '#EC489
           particle.speedY *= -1;
         }
 
-        // Draw particle
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = particle.color + Math.floor(particle.opacity * 255).toString(16).padStart(2, '0');
-        ctx.fill();
+        // Draw particle based on its shape
+        drawShape(ctx, particle);
       });
 
       animationRef.current = requestAnimationFrame(animate);
@@ -90,7 +162,7 @@ const FloatingParticles = ({ count = 30, colors = ['#8B5CF6', '#A78BFA', '#EC489
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [dimensions, count, colors]);
+  }, [dimensions, count, colors, speed, shapes, glow]);
 
   return (
     <canvas
