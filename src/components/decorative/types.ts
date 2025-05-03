@@ -4,7 +4,10 @@ export type SVGVariant =
   'waves' | 
   'constellation' | 
   'abstract' | 
-  'geometric';
+  'geometric' |
+  'bubble' |
+  'dots' |
+  'grid';
 
 export interface DecorativeSVGProps {
   variant?: SVGVariant;

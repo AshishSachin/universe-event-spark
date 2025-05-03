@@ -1,10 +1,10 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useUniverse } from "@/context/UniverseContext";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Logo from "./Logo";
 
 const Header = () => {
   const { isAuthenticated, currentUser, logout } = useUniverse();
@@ -49,19 +49,7 @@ const Header = () => {
       )}
     >
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link 
-          to="/" 
-          className="flex items-center gap-2 group"
-        >
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-universe-purple to-universe-pink flex items-center justify-center animate-pulse-glow">
-            <div className="h-8 w-8 rounded-full bg-background flex items-center justify-center">
-              <span className="text-lg font-bold text-universe-purple">U</span>
-            </div>
-          </div>
-          <span className="text-2xl font-bold text-gradient">
-            UniVerse
-          </span>
-        </Link>
+        <Logo size={scrolled ? "sm" : "md"} />
 
         {/* Desktop Menu */}
         <nav className="hidden md:flex items-center gap-6">

@@ -6,6 +6,9 @@ import WavesSVG from './decorative/WavesSVG';
 import ConstellationSVG from './decorative/ConstellationSVG';
 import AbstractSVG from './decorative/AbstractSVG';
 import GeometricSVG from './decorative/GeometricSVG';
+import BubbleSVG from './decorative/BubbleSVG';
+import DotsSVG from './decorative/DotsSVG';
+import GridSVG from './decorative/GridSVG';
 
 const DecorativeSVG = ({ 
   variant = 'circuit', 
@@ -40,6 +43,12 @@ const DecorativeSVG = ({
         return <AbstractSVG {...props} />;
       case 'geometric':
         return <GeometricSVG {...props} />;
+      case 'bubble':
+        return <BubbleSVG {...props} />;
+      case 'dots':
+        return <DotsSVG {...props} />;
+      case 'grid':
+        return <GridSVG {...props} />;
       default:
         return null;
     }
