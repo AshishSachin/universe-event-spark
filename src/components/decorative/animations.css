@@ -1,0 +1,32 @@
+
+@keyframes path-animation {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+.path-animation {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: path-animation 2s forwards ease-out;
+}
+@keyframes wave-animation {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-20%); }
+}
+.wave-animation {
+  animation: wave-animation 4s infinite alternate ease-in-out;
+}
+@keyframes draw-animation {
+  to { stroke-dashoffset: 0; }
+}
+.draw-animation {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-animation 2s forwards;
+}
+@keyframes pulse-animation {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.6; }
+}
+.pulse-animation {
+  animation: pulse-animation 2s infinite;
+}
