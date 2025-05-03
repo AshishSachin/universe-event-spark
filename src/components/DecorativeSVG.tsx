@@ -183,7 +183,8 @@ const DecorativeSVG = ({
 
   return (
     <div className="relative">
-      <style jsx>{`
+      <style>
+        {`
         @keyframes path-animation {
           0% { stroke-dashoffset: 1000; }
           100% { stroke-dashoffset: 0; }
@@ -215,7 +216,8 @@ const DecorativeSVG = ({
         .pulse-animation {
           animation: pulse-animation 2s infinite;
         }
-      `}</style>
+        `}
+      </style>
       {renderSVG()}
     </div>
   );
