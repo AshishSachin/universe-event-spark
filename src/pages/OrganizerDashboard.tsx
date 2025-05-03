@@ -17,7 +17,9 @@ import {
   BarChart3, 
   Tag, 
   Download, 
-  Edit 
+  Edit,
+  MapPin,
+  Eye
 } from "lucide-react";
 import { useUniverse } from "@/context/UniverseContext";
 import FloatingParticles from "@/components/FloatingParticles";
@@ -189,6 +191,7 @@ const DashboardOverview = ({ stats, navigate }) => {
           title="Active Events" 
           value={stats.activeEvents} 
           icon={<Calendar />}
+          trend={null} // Add trend as null for cards without trend
           color="bg-blue-100 text-blue-600"
           onClick={() => {}}
         />
@@ -440,6 +443,7 @@ const TicketSales = ({ tickets, events }) => {
               title="Total Sales" 
               value={tickets.length} 
               icon={<Ticket />}
+              trend={null} // Added trend as null
               color="bg-green-100 text-green-600"
               onClick={() => {}}
             />
@@ -447,6 +451,7 @@ const TicketSales = ({ tickets, events }) => {
               title="Revenue" 
               value={formatCurrency(tickets.reduce((sum, ticket) => sum + ticket.price, 0))} 
               icon={<Tag />}
+              trend={null} // Added trend as null
               color="bg-amber-100 text-amber-600"
               onClick={() => {}}
             />
@@ -454,6 +459,7 @@ const TicketSales = ({ tickets, events }) => {
               title="Avg. Ticket Price" 
               value={formatCurrency(tickets.reduce((sum, ticket) => sum + ticket.price, 0) / Math.max(1, tickets.length))} 
               icon={<BarChart3 />}
+              trend={null} // Added trend as null
               color="bg-blue-100 text-blue-600"
               onClick={() => {}}
             />
@@ -614,37 +620,22 @@ const StatCard = ({ title, value, icon, trend, color, onClick }) => {
 };
 
 // Helper function for date formatting
-function formatDate(dateString) {
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+function formatDate(dateString: string): string {
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  };
   return new Date(dateString).toLocaleDateString('en-US', options);
 }
 
 // Helper function for currency formatting
-function formatCurrency(amount) {
+function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0
   }).format(amount);
 }
-
-// Function to add the Eye icon (missing in imports)
-const Eye = ({ className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-);
 
 export default OrganizerDashboard;
