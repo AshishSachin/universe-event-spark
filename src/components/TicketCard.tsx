@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Ticket, Event } from "@/context/UniverseContext";
 import { formatDate } from "@/lib/utils";
+import QRCode from "qrcode";
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -21,6 +21,7 @@ interface TicketCardProps {
 
 const TicketCard = ({ ticket, event }: TicketCardProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -34,6 +35,37 @@ const TicketCard = ({ ticket, event }: TicketCardProps) => {
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
     }
   };
+
+  useEffect(() => {
+    const generateQRCode = async () => {
+      try {
+        const qrData = JSON.stringify({
+          ticketId: ticket.id,
+          eventId: ticket.eventId,
+          userId: ticket.userId,
+          eventTitle: event.title,
+          attendee: ticket.userName,
+          date: event.date,
+          venue: event.venue
+        });
+        const url = await QRCode.toDataURL(qrData, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeUrl(url);
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+      }
+    };
+
+    if (ticket.status === "confirmed") {
+      generateQRCode();
+    }
+  }, [ticket, event]);
 
   return (
     <>
@@ -144,9 +176,21 @@ const TicketCard = ({ ticket, event }: TicketCardProps) => {
               </div>
               <div className="border-t border-border pt-2 flex justify-center">
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-1">QR Code</p>
-                  <div className="h-24 w-24 bg-black mx-auto"></div>
-                  <p className="text-xs mt-1 font-medium">Scan at the venue</p>
+                  <p className="text-xs text-muted-foreground mb-2">QR Code</p>
+                  {qrCodeUrl && ticket.status === "confirmed" ? (
+                    <img 
+                      src={qrCodeUrl} 
+                      alt="Ticket QR Code" 
+                      className="mx-auto border border-border rounded"
+                    />
+                  ) : (
+                    <div className="h-24 w-24 bg-muted border border-border rounded mx-auto flex items-center justify-center">
+                      <span className="text-xs text-muted-foreground">No QR Code</span>
+                    </div>
+                  )}
+                  <p className="text-xs mt-2 font-medium">
+                    {ticket.status === "confirmed" ? "Scan at the venue" : "Available when confirmed"}
+                  </p>
                 </div>
               </div>
             </div>
