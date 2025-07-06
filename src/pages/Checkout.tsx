@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PaymentConfirmation from "@/components/PaymentConfirmation";
 import { 
   Form, 
   FormControl, 
@@ -42,7 +43,7 @@ const Checkout = () => {
   const [event, setEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // 1: Form, 2: Payment Details, 3: Confirmation
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -80,7 +81,12 @@ const Checkout = () => {
     if (step === 1) {
       setStep(2);
       window.scrollTo(0, 0);
+    } else if (step === 2) {
+      // Move to confirmation step
+      setStep(3);
+      window.scrollTo(0, 0);
     } else {
+      // Final confirmation - process payment
       if (!event) return;
       
       setIsProcessing(true);
@@ -123,54 +129,6 @@ const Checkout = () => {
     form.setValue("quantity", newQuantity);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="container mx-auto px-4 pt-24 pb-12 flex-grow">
-          <Skeleton className="h-10 w-1/4 mb-6" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-64 rounded-xl" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/3" />
-            </div>
-            <div>
-              <Skeleton className="h-64 rounded-xl" />
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="container mx-auto px-4 pt-24 pb-12 flex-grow flex items-center justify-center">
-          <div className="text-center space-y-4 max-w-md">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-            <h1 className="text-2xl font-bold">Event Not Found</h1>
-            <p className="text-muted-foreground">
-              We couldn't find the event you're trying to book tickets for. It may have been removed or the link is incorrect.
-            </p>
-            <Button 
-              className="bg-gradient text-white mt-4"
-              onClick={() => navigate("/events")}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> 
-              Browse Events
-            </Button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -180,268 +138,275 @@ const Checkout = () => {
           <Button 
             variant="ghost" 
             className="mr-2"
-            onClick={() => navigate(`/events/${event.id}`)}
+            onClick={() => {
+              if (step === 1) {
+                navigate(`/events/${event?.id}`);
+              } else {
+                setStep(step - 1);
+              }
+            }}
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
           <h1 className="text-2xl font-bold">
-            {step === 1 ? "Checkout" : "Payment"}
+            {step === 1 ? "Checkout" : step === 2 ? "Payment" : "Confirm Purchase"}
           </h1>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 animate-slide-right">
-            {step === 1 ? (
-              <div className="bg-card border border-border rounded-xl p-6 mb-8">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <Ticket className="h-5 w-5 mr-2 text-universe-purple" />
-                  Attendee Information
-                </h2>
-                
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="department"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Department</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+        {step === 3 ? (
+          // Confirmation Step
+          <PaymentConfirmation
+            event={event!}
+            attendeeDetails={form.getValues()}
+            onConfirm={() => form.handleSubmit(onSubmit)()}
+            onBack={() => setStep(2)}
+            isProcessing={isProcessing}
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 animate-slide-right">
+              {step === 1 ? (
+                <div className="bg-card border border-border rounded-xl p-6 mb-8">
+                  <h2 className="text-lg font-semibold mb-4 flex items-center">
+                    <Ticket className="h-5 w-5 mr-2 text-universe-purple" />
+                    Attendee Information
+                  </h2>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Full Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="department"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Department</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                    <FormField
-                      control={form.control}
-                      name="quantity"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Ticket Quantity</FormLabel>
-                          <div className="flex items-center space-x-3">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleQuantityChange(-1)}
-                              disabled={field.value <= 1}
-                            >
-                              -
-                            </Button>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="number"
-                                className="w-20 text-center"
-                                min={1}
-                                max={10}
-                                onChange={(e) => {
-                                  const value = parseInt(e.target.value);
-                                  if (!isNaN(value)) {
-                                    field.onChange(Math.max(1, Math.min(10, value)));
-                                  }
-                                }}
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleQuantityChange(1)}
-                              disabled={field.value >= 10}
-                            >
-                              +
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Maximum 10 tickets per transaction
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name="quantity"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ticket Quantity</FormLabel>
+                            <div className="flex items-center space-x-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleQuantityChange(-1)}
+                                disabled={field.value <= 1}
+                              >
+                                -
+                              </Button>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  className="w-20 text-center"
+                                  min={1}
+                                  max={10}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (!isNaN(value)) {
+                                      field.onChange(Math.max(1, Math.min(10, value)));
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleQuantityChange(1)}
+                                disabled={field.value >= 10}
+                              >
+                                +
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Maximum 10 tickets per transaction
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <div className="pt-4">
-                      <Button 
-                        type="submit" 
-                        className="bg-gradient text-white"
-                      >
-                        Continue to Payment
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
-            ) : (
-              <div className="bg-card border border-border rounded-xl p-6 mb-8 animate-slide-up">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2 text-universe-purple" />
-                  Payment Details
-                </h2>
-                
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4">
-                      <FormItem>
-                        <FormLabel>Card Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="1234 5678 9012 3456" />
-                        </FormControl>
-                      </FormItem>
-                      
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="pt-4">
+                        <Button 
+                          type="submit" 
+                          className="bg-gradient text-white"
+                        >
+                          Continue to Payment
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </div>
+              ) : (
+                <div className="bg-card border border-border rounded-xl p-6 mb-8 animate-slide-up">
+                  <h2 className="text-lg font-semibold mb-4 flex items-center">
+                    <CreditCard className="h-5 w-5 mr-2 text-universe-purple" />
+                    Payment Details
+                  </h2>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
                         <FormItem>
-                          <FormLabel>Expiry Date</FormLabel>
+                          <FormLabel>Card Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="MM/YY" />
+                            <Input placeholder="1234 5678 9012 3456" />
                           </FormControl>
                         </FormItem>
                         
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormItem>
+                            <FormLabel>Expiry Date</FormLabel>
+                            <FormControl>
+                              <Input placeholder="MM/YY" />
+                            </FormControl>
+                          </FormItem>
+                          
+                          <FormItem>
+                            <FormLabel>CVV</FormLabel>
+                            <FormControl>
+                              <Input placeholder="123" />
+                            </FormControl>
+                          </FormItem>
+                        </div>
+                        
                         <FormItem>
-                          <FormLabel>CVV</FormLabel>
+                          <FormLabel>Cardholder Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="123" />
+                            <Input placeholder="John Doe" />
                           </FormControl>
                         </FormItem>
                       </div>
                       
-                      <FormItem>
-                        <FormLabel>Cardholder Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" />
-                        </FormControl>
-                      </FormItem>
-                    </div>
-                    
-                    <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                      <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={() => setStep(1)}
-                        disabled={isProcessing}
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" /> 
-                        Back
-                      </Button>
-                      
-                      <Button 
-                        type="submit" 
-                        className="bg-gradient text-white"
-                        disabled={isProcessing}
-                      >
-                        {isProcessing ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Processing Payment...
-                          </>
-                        ) : (
-                          <>Complete Payment</>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
-            )}
-          </div>
-          
-          {/* Order Summary */}
-          <div className="animate-slide-left">
-            <div className="bg-card border border-border rounded-xl p-6 shadow-sm sticky top-24">
-              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-              
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
-                <img 
-                  src={event.image} 
-                  alt={event.title} 
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-                <div>
-                  <h3 className="font-medium">{event.title}</h3>
-                  <p className="text-sm text-muted-foreground">{formatDate(event.date)} at {event.time}</p>
-                  <p className="text-sm text-muted-foreground">{event.venue.split(',')[0]}</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ticket Price</span>
-                  <span>{event.price > 0 ? `₹${event.price}` : "Free"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Quantity</span>
-                  <span>{form.getValues("quantity")}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Booking Fee</span>
-                  <span>₹0</span>
-                </div>
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <div className="flex justify-between font-semibold text-lg mb-6">
-                <span>Total</span>
-                <span>{event.price > 0 ? `₹${event.price * form.getValues("quantity")}` : "Free"}</span>
-              </div>
-
-              {step === 2 && (
-                <div className="bg-muted rounded-lg p-3 text-sm flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <p>Your ticket will be available to download or view immediately after successful payment.</p>
+                      <div className="pt-4 flex flex-col sm:flex-row gap-4">
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                          disabled={isProcessing}
+                        >
+                          <ArrowLeft className="mr-2 h-4 w-4" /> 
+                          Back
+                        </Button>
+                        
+                        <Button 
+                          type="submit" 
+                          className="bg-gradient text-white"
+                          disabled={isProcessing}
+                        >
+                          Review Order
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </div>
               )}
             </div>
+            
+            {/* Order Summary */}
+            <div className="animate-slide-left">
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm sticky top-24">
+                <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+                
+                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+                  <img 
+                    src={event?.image} 
+                    alt={event?.title} 
+                    className="w-16 h-16 rounded-lg object-cover"
+                  />
+                  <div>
+                    <h3 className="font-medium">{event?.title}</h3>
+                    <p className="text-sm text-muted-foreground">{event ? formatDate(event.date) : ''} at {event?.time}</p>
+                    <p className="text-sm text-muted-foreground">{event?.venue.split(',')[0]}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mb-6">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Ticket Price</span>
+                    <span>{event && event.price > 0 ? `₹${event.price}` : "Free"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Quantity</span>
+                    <span>{form.getValues("quantity")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Booking Fee</span>
+                    <span>₹0</span>
+                  </div>
+                </div>
+                
+                <Separator className="my-4" />
+                
+                <div className="flex justify-between font-semibold text-lg mb-6">
+                  <span>Total</span>
+                  <span>{event && event.price > 0 ? `₹${event.price * form.getValues("quantity")}` : "Free"}</span>
+                </div>
+
+                {step >= 2 && (
+                  <div className="bg-muted rounded-lg p-3 text-sm flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <p>Your ticket will be available to download or view immediately after successful payment.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       <Footer />
