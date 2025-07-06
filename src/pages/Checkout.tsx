@@ -129,6 +129,18 @@ const Checkout = () => {
     form.setValue("quantity", newQuantity);
   };
 
+  // Helper function to get form values with proper defaults
+  const getAttendeeDetails = () => {
+    const values = form.getValues();
+    return {
+      name: values.name || "",
+      email: values.email || "",
+      phone: values.phone || "",
+      department: values.department || "",
+      quantity: values.quantity || 1
+    };
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -158,7 +170,7 @@ const Checkout = () => {
           // Confirmation Step
           <PaymentConfirmation
             event={event!}
-            attendeeDetails={form.getValues()}
+            attendeeDetails={getAttendeeDetails()}
             onConfirm={() => form.handleSubmit(onSubmit)()}
             onBack={() => setStep(2)}
             isProcessing={isProcessing}
